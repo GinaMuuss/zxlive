@@ -6,8 +6,14 @@
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
   outputs =
-    { nixpkgs, pyproject-nix, flake-utils, ... }:
+    {
+      nixpkgs,
+      pyproject-nix,
+      flake-utils,
+      ...
+    }:
     (flake-utils.lib.eachDefaultSystem (
       system:
       let
@@ -15,7 +21,7 @@
           system = system;
         };
         lib = nixpkgs.lib;
- 
+
         # Loads pyproject.toml into a high-level project representation
         project = pyproject-nix.lib.project.loadPyproject {
           projectRoot = ./.;
@@ -43,13 +49,37 @@
       in
       {
         # Create a development shell containing dependencies from `pyproject.toml`
-        devShells.default =
-          let
-            arg = project.renderers.withPackages { inherit python; };
-            pythonEnv = python.withPackages arg;
+        devShells.default = pkgs.mkShell rec {
+          name = "impurePythonEnv";
+          venvDir = "./.venv";
+          buildInputs = [
+            # A Python interpreter including the 'venv' module is required to bootstrap
+            # the environment.
+            pkgs.python3Packages.python
 
-          in
-          pkgs.mkShell { packages = [ pythonEnv ]; };
+            # This executes some shell code to initialize a venv in $venvDir before
+            # dropping into the shell
+            pkgs.python3Packages.venvShellHook
+
+            # Those are dependencies that we would like to use from nixpkgs, which will
+            # add them to PYTHONPATH and thus make them accessible from within the venv.
+            pkgs.python3Packages.pyside6
+          ];
+
+          # Run this command, only after creating the virtual environment
+          postVenvCreation = ''
+            unset SOURCE_DATE_EPOCH
+            pip install .
+          '';
+
+          # Now we can execute any commands within the virtual environment.
+          # This is optional and can be left out to run pip manually.
+          postShellHook = ''
+            # allow pip to install wheels
+            unset SOURCE_DATE_EPOCH
+          '';
+
+        };
 
         # Build our package using `buildPythonPackage`
         packages.default =
