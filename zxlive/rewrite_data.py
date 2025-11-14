@@ -311,7 +311,7 @@ operations["bialgebra"]["picture"] = "bialgebra.png"
 
 rules_zxw = ["spider", "fuse_w", "z_to_z_box"]
 
-rules_zh = ["had2edge", "fuse_hbox", "mult_hbox"]
+rules_zh = ["had2edge", "fuse_hbox", "mult_hbox", "h_bialg"]
 
 action_groups = {
     "Basic rules": {'ocm': ocm_action} | {key: operations[key] for key in rules_basic},

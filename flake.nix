@@ -34,10 +34,10 @@
               pyzx = super.pyzx.overridePythonAttrs (old: rec {
                 version = "dev";
                 src = pkgs.fetchFromGitHub {
-                  owner = "zxcalc";
+                  owner = "GinaMuuss";
                   repo = "pyzx";
                   rev = "master";
-                  hash = "sha256-YAqkNhdq7kPObTXXWCYZDtiBKoz7+op1oW/NuleP6+c=";
+                  hash = "sha256-82rnQFNG9EoqTHxOFzNUanU61zW43CXq/LiPHJA6uWA=";
                 };
               });
             };
@@ -49,37 +49,43 @@
       in
       {
         # Create a development shell containing dependencies from `pyproject.toml`
-        devShells.default = pkgs.mkShell rec {
-          name = "impurePythonEnv";
-          venvDir = "./.venv";
-          buildInputs = [
-            # A Python interpreter including the 'venv' module is required to bootstrap
-            # the environment.
-            pkgs.python3Packages.python
+        devShells.default =
+          let
+            arg = project.renderers.withPackages { inherit python; };
+            pythonEnv = python.withPackages arg;
+          in
+          pkgs.mkShell rec {
+            name = "impurePythonEnv";
+            venvDir = "./.venv";
+            buildInputs = [
+              # A Python interpreter including the 'venv' module is required to bootstrap
+              # the environment.
+              pkgs.python3Packages.python
 
-            # This executes some shell code to initialize a venv in $venvDir before
-            # dropping into the shell
-            pkgs.python3Packages.venvShellHook
+              # This executes some shell code to initialize a venv in $venvDir before
+              # dropping into the shell
+              pkgs.python3Packages.venvShellHook
 
-            # Those are dependencies that we would like to use from nixpkgs, which will
-            # add them to PYTHONPATH and thus make them accessible from within the venv.
-            pkgs.python3Packages.pyside6
-          ];
+              # Those are dependencies that we would like to use from nixpkgs, which will
+              # add them to PYTHONPATH and thus make them accessible from within the venv.
+              pkgs.python3Packages.pyside6
+              pythonEnv
+            ];
 
-          # Run this command, only after creating the virtual environment
-          postVenvCreation = ''
-            unset SOURCE_DATE_EPOCH
-            pip install .
-          '';
+            # Run this command, only after creating the virtual environment
+            postVenvCreation = ''
+              unset SOURCE_DATE_EPOCH
+              pip install .
+            '';
 
-          # Now we can execute any commands within the virtual environment.
-          # This is optional and can be left out to run pip manually.
-          postShellHook = ''
-            # allow pip to install wheels
-            unset SOURCE_DATE_EPOCH
-          '';
-
-        };
+            # Now we can execute any commands within the virtual environment.
+            # This is optional and can be left out to run pip manually.
+            postShellHook = ''
+              # allow pip to install wheels
+              unset SOURCE_DATE_EPOCH
+            '';
+            #           export PYTHONPATH=${venvDir}/lib/python3.12/site-packages:$PYTHONPATH
+          };
 
         # Build our package using `buildPythonPackage`
         packages.default =

@@ -151,6 +151,8 @@ class ProofPanel(BasePanel):
                 anims.anticipate_fuse(self.graph_scene.vertex_map[w])
             elif pyzx.basicrules.check_strong_comp(self.graph, v, w):
                 anims.anticipate_strong_comp(self.graph_scene.vertex_map[w])
+            elif pyzx.hrules.check_h_bialg(self.graph, v, w):
+                anims.anticipate_strong_comp(self.graph_scene.vertex_map[w])
             elif pyzx.hrules.match_copy(self.graph, lambda x: x in (v, w)): # This function takes a vertex matching function, which we restrict to just match to v and w
                 anims.anticipate_strong_comp(self.graph_scene.vertex_map[w])
             elif editor_actions.pauli_matcher(self.graph, lambda x: x in (v, w)):
@@ -194,6 +196,12 @@ class ProofPanel(BasePanel):
             pyzx.basicrules.strong_comp(g, w, v)
             anim = anims.strong_comp(self.graph, g, w, self.graph_scene)
             cmd = AddRewriteStep(self.graph_view, g, self.step_view, "bialgebra")
+            self.play_sound_signal.emit(SFXEnum.BOOM_BOOM_BOOM)
+            self.undo_stack.push(cmd, anim_after=anim)
+        elif pyzx.hrules.check_h_bialg(g, v, w):
+            pyzx.hrules.h_bialg(g, w, v)
+            anim = anims.strong_comp(self.graph, g, w, self.graph_scene)
+            cmd = AddRewriteStep(self.graph_view, g, self.step_view, "h-bialgebra")
             self.play_sound_signal.emit(SFXEnum.BOOM_BOOM_BOOM)
             self.undo_stack.push(cmd, anim_after=anim)
         else:
